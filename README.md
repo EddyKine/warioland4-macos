@@ -1,5 +1,23 @@
 # Wario Land 4 — Native PC Port
 
+## Experimental macOS Apple Silicon port
+
+This repository adds an experimental native macOS arm64 backend to
+[BioRhythmicStudios/warioland4](https://github.com/BioRhythmicStudios/warioland4),
+based on its `port` branch at `b71d137`. Original credits and license notices
+are preserved. The Windows and Linux release links below belong to that upstream
+project; this repository does not currently provide a macOS binary release.
+
+Install the Xcode command line tools and Homebrew packages `cmake`, `ninja` and
+`sdl3`, then run `sh port/macos/build.sh`. Place your own compatible US ROM at
+`../.work/rom/baserom_us.gba` relative to the checkout before launching the generated
+`../Wario Land 4.app`. No ROM is distributed. See
+[macOS build instructions and verification limits](port/macos/README.md).
+Occasional audio crackles remain unresolved and full-game compatibility has not
+been verified.
+
+## Upstream Windows and Linux port
+
 Play Wario Land 4 with native x86-64 builds for Windows and Linux. The port
 compiles the decompiled game C code and uses SDL3 for graphics, audio and input;
 it does not run through Wine or Proton. **You must provide your own supported,

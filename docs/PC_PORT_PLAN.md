@@ -176,6 +176,119 @@ Steps 1–3 change shared code under the byte-identical invariant and can merge 
 
 ### Where we are (2026-10-18)
 
+Public GitHub preparation (2026-11-06): the user requested publication of the
+macOS arm64 port in their own public repository. The empty public destination
+EddyKine/warioland4-macos is created and configured as myfork; GitHub CLI
+authorization is pending. No push or release has been performed. Base is b71d137.
+The intended port history contains none of the three prohibited launcher images.
+ROMs, player saves, builds and AppleDouble metadata are excluded from publication.
+The existing arm64 build is up to date; coroutine, BIOS/LZ77, I/O, virtual-controller
+recovery, synthetic audio continuity and rumble-event checks pass locally.
+The audio experiment remains disabled; these checks do not establish audible
+quality. Shared src/include/port/generated have no diff. GBA byte identity was
+not rebuilt: the required reference objects and compiler are absent locally;
+the previous imported verification remains v7-46, with v7-47 next.
+Next: authorize GitHub CLI, then push only branch port to myfork. The publication
+commit includes the named macOS sources, documentation and metadata/save ignores.
+
+Audio investigation / response rollback (2026-10-27): user confirms graphics and
+Machenike Bluetooth controls now work well; occasional crackles remain. Real log
+9911 frames/166.208 s has 8 silence refills, 0 overflow drops, 2 clock resets.
+A separate 100 ms buffered audio trial was rejected by the user for added perceived
+audio/action latency. Normal app remained untouched, exact executable SHA256
+671d524e42d3f543665640c95de79f222acb1aeda8d1090ba6a31ad40cc8f9a8.
+Trial moved, while closed, to build/macos-audio-fix/rejected-latency.app; its save
+is preserved. Player save hash unchanged during investigation. No process stopped.
+Bounded low-latency alternative tested on synthetic signal: old ~67 ms target,
+no preventive zero insertion, short fade on real demand shortage. Continuity test
+passes but no subjective audio or button-to-photon validation; NOT enabled/deployed.
+Default generator/build script force WL4_DARWIN_AUDIO_EXPERIMENT=OFF and package
+script prevents experimental normal-app packaging. Native source WAV unchanged.
+Stable package coroutine/I/O and virtual input/pacing/recovery checks pass.
+Audio investigation is bounded per user request; next is use the known responsive
+normal app, with occasional crackles accepted pending a separately requested trial.
+See docs/MACOS_AUDIO_INVESTIGATION.md. No shared GBA edits or local GBA rebuild,
+no commit/push/release; upstream still b71d137.
+
+
+macOS Bluetooth input follow-up (2026-10-27): user reports Machenike G5 Pro
+(Bluetooth, exposed as Xbox), live animation/music but no Wario movement while
+entering the first stage cave. Previous session log lacks input/focus state, so
+its exact cause remains unconfirmed. Isolated reproduction found that retaining
+an SDL disconnected gamepad handle after lost remove/add events yields zero
+buttons indefinitely. New macOS-only controls implementation detects stale
+handles on polling and rescans. Before-fix isolated test fails; after-fix passes.
+Full virtual-device room route deliberately drops hotplug events at steps
+8070/8071: old build has 229 input mismatches and remains in room 0; corrected
+8800-frame build crosses room 0 -> 11 at step 8094, returns to active submode 2,
+moves Wario with input after entry and passes with zero mismatches. Existing
+keyboard/settings/virtual-pad tests also pass. This is not a reproduction with
+the user's physical device and does not rule out other player-state/focus issues.
+Added state/input/focus/device trace and audio queue/refill/drop/pacing diagnostics;
+launcher archives previous logs on SSD. Updated same local app, strict signature
+and packaged coroutine/I/O smoke pass. No GUI instance launched for manual retest.
+Player save SHA256 remains 2476ee2e3f5e7fcb2f1d20ead2cdb18a6868d27cf791029da1e5ac0ae9bf50ee.
+Audio correction: user reports persistent light crackles despite otherwise good
+sound; cause unestablished and not fixed. Await new diagnostics for that issue.
+No shared GBA source edits, GBA rebuild, commits or publication. Current upstream
+remains b71d137. Evidence: build/macos-input-fix; see docs/MACOS_INPUT_FIX.md.
+Next: user repeats the cave transition on the updated app; inspect raw/sent/GBA
+buttons, focus, pose/submode and audio counters if symptoms recur.
+
+
+macOS arm64 implementation (2026-10-27, local experimental build):
+The compatible own ROM now runs. New port/macos backend reserves high GBA backing,
+rebases data symbols and stack, translates GbaPtr values, emulates faulting native
+arm64 memory accesses, and supplies Mach-O/POSIX integration. Shared GBA source,
+headers and generated files are unchanged; build-only derivatives live in build/.
+Coroutine, BIOS including all 50 LZ77 streams, I/O/DMA/IRQ, arm64 access fixtures,
+settings/keyboard/virtual-gamepad and disposable-save recovery checks pass.
+8500-frame Hall route exits 0 with screenshot/audio and a 32 KiB disposable save.
+A new 1400-frame process shows Hall of Hieroglyphs in file A; save hash unchanged.
+App ../Wario Land 4.app includes SDL3 and passes strict local signature verification.
+LaunchServices app shows title/menu in Metal, accepts Enter and F11 fullscreen;
+SDL audio initializes, audible quality awaits user listening. App left open.
+Original ROMs untouched; own runtime state/build/cache/temp paths remain on SSD.
+No commit/push/release. Latest upstream commit b71d137; no local GBA rebuild or
+baseline object comparison (compiler/reference set absent). See port/macos/README.md
+and docs/MACOS_AUDIT.md. Next: user gameplay/audio acceptance and focused faults
+as reported; full-game and mGBA equivalence remain unverified.
+
+
+macOS arm64 follow-up (2026-10-27): second own ROM is compatible.
+External SSD Wario Land 4 (USA, Europe).gba and the matching ZIP member both
+have size 8388608, game code AWAE, MD5 5fe47355a33e3fabec2a1607af88a404.
+Upstream arm64 ROM validator passes, exit 0. Working copy under GBA/.work/rom;
+originals unchanged. This supersedes the missing-compatible-ROM limitation below.
+Further Mach fixed-address probe returns KERN_INVALID_ADDRESS at 0x02000000.
+Apple linker explicitly ignores -no_pie on arm64; low-PAGEZERO probe exits 137.
+No game boot, native game executable, source-game edits or new GBA rebuild.
+Latest upstream commit remains b71d137; latest local GBA verification remains none.
+Next required work is a Darwin/arm64 memory-access design plus fault and linker
+backends, then runtime regressions with the now-compatible ROM. Details and logs
+in docs/MACOS_AUDIT.md and build/macos-audit/second-rom-check.json.
+
+
+macOS arm64 feasibility audit (2026-10-27, local only):
+Source port b71d137afbdf0195586cdbf1e01056b44f5bcfee cloned on external SSD.
+CMake now excludes AppleDouble metadata from source globs and applies the
+x86-specific bitfield flag only on x86_64. arm64 CRT software-rendering and
+rumble-event executables build and pass; these are component tests, not gameplay.
+Full game build fails at the PE/ELF .text section attribute in color_fading.c.
+Windows runtime/filesystem and x86 fault decoder need Darwin/arm64 replacements;
+Linux branch 8e49d1f also explicitly targets x86_64. Host pages are 16 KiB.
+Default memory probe cannot obtain low GBA addresses; experimental lowered
+PAGEZERO binaries terminate with exit 137 before main. Cause not established.
+User ROM in the external SSD ZIP is 8 MiB/AWAE, MD5
+7cac34287d40b046e961687333226c36; unmodified upstream validator rejects it
+(expected 5fe47355a33e3fabec2a1607af88a404). Original archive unchanged;
+ROM read in memory only. No gameplay or native game executable available.
+No changes to shared src/, include/, port/generated/ or tools/agbcc. GBA binary
+identity not rebuilt/verified locally; no compatible ROM/baseline object set.
+Evidence and probe sources: build/macos-audit/. See docs/MACOS_AUDIT.md.
+Next: compatible own ROM plus a Darwin/arm64 memory, fault and linker design.
+
+
 Windows v0.3.1-beta private review (2026-10-22), local and unpublished:
 Toy Block Tower fix 4b61e24 and user-acceptance documentation a032856 are committed.
 The user completed the former crash route through Keyzer, the large red pipe,

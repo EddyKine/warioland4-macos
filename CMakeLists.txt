@@ -5,6 +5,13 @@ project(warioland4_pc C ASM)
 option(WL4_CAST_WARNINGS "Show the pointer/integer cast warnings (the GbaPtr worklist)" OFF)
 option(WL4_ASAN "Build with AddressSanitizer" OFF)
 
+if(APPLE)
+    if(NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
+        message(FATAL_ERROR "The experimental Darwin backend currently requires arm64")
+    endif()
+    include(port/macos/CMakeLists.txt)
+endif()
+
 if(WL4_ASAN)
     add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
     add_link_options(-fsanitize=address)
@@ -14,6 +21,8 @@ endif()
 # the user's ROM. The function pointer tables there hold native addresses, so they are built.
 file(GLOB_RECURSE WL4_GAME_SOURCES CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/src/*.c)
 list(FILTER WL4_GAME_SOURCES EXCLUDE REGEX "/src/data/")
+# macOS creates AppleDouble metadata files on exFAT volumes.
+list(FILTER WL4_GAME_SOURCES EXCLUDE REGEX "/\\._")
 list(APPEND WL4_GAME_SOURCES
     ${PROJECT_SOURCE_DIR}/src/data/color_fading_pointers.c
     ${PROJECT_SOURCE_DIR}/src/data/stage_end_pointers.c
@@ -21,6 +30,7 @@ list(APPEND WL4_GAME_SOURCES
 )
 
 file(GLOB WL4_LAYOUT_ASSERTS CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/port/generated/layout_asserts_*.c)
+list(FILTER WL4_LAYOUT_ASSERTS EXCLUDE REGEX "/\\._")
 
 # How game code is compiled, shared by the game library and the layout checks.
 add_library(wl4_game_flags INTERFACE)
@@ -32,7 +42,7 @@ target_compile_options(wl4_game_flags INTERFACE
     # and null pointers that may be dereferenced (GBA address 0 is the BIOS).
     -funsigned-char -fno-strict-aliasing -fwrapv -fno-delete-null-pointer-checks
     # GCC bitfield layout, as agbcc uses, instead of the Microsoft layout mingw defaults to.
-    -mno-ms-bitfields
+    $<$<STREQUAL:${CMAKE_SYSTEM_PROCESSOR},x86_64>:-mno-ms-bitfields>
     # The game's data sits at its GBA addresses, which are aligned to 4 bytes at most. Clang
     # takes every global array of 16 bytes or more to be 16-byte aligned, and copies them
     # with aligned SSE loads, which fault. No SSE in game code, then (it has no float maths
@@ -52,12 +62,28 @@ if(NOT WL4_CAST_WARNINGS)
         -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast -Wno-void-pointer-to-int-cast -Wno-int-to-void-pointer-cast)
 endif()
 
+if(APPLE)
+    list(REMOVE_ITEM WL4_GAME_SOURCES ${PROJECT_SOURCE_DIR}/src/color_fading.c)
+    list(APPEND WL4_GAME_SOURCES ${WL4_DARWIN_GENERATED}/color_fading.c)
+    list(REMOVE_ITEM WL4_GAME_SOURCES ${PROJECT_SOURCE_DIR}/src/minigames/roulette/update_roulette_intro.c)
+    list(APPEND WL4_GAME_SOURCES ${WL4_DARWIN_GENERATED}/update_roulette_intro.c)
+    foreach(_name hoggus aerodent cuckoo_condor)
+        list(REMOVE_ITEM WL4_GAME_SOURCES ${PROJECT_SOURCE_DIR}/src/sprite_ai/${_name}.c)
+        list(APPEND WL4_GAME_SOURCES ${WL4_DARWIN_GENERATED}/${_name}.c)
+    endforeach()
+endif()
+
 add_library(wl4_game STATIC ${WL4_GAME_SOURCES} ${WL4_LAYOUT_ASSERTS})
 target_link_libraries(wl4_game PRIVATE wl4_game_flags)
 
 # Layout checks for the structs that game sources define themselves. Each one includes its
 # source file, so these objects are compiled but never linked.
 file(GLOB WL4_LAYOUT_CHECKS CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/port/generated/layout_checks/*.c)
+list(FILTER WL4_LAYOUT_CHECKS EXCLUDE REGEX "/\\._")
+if(APPLE)
+    list(REMOVE_ITEM WL4_LAYOUT_CHECKS ${PROJECT_SOURCE_DIR}/port/generated/layout_checks/color_fading.c)
+    list(APPEND WL4_LAYOUT_CHECKS ${WL4_DARWIN_GENERATED}/layout_color_fading.c)
+endif()
 add_library(wl4_layout_checks OBJECT ${WL4_LAYOUT_CHECKS})
 target_link_libraries(wl4_layout_checks PRIVATE wl4_game_flags)
 # The game library already reports these sources' warnings.
@@ -147,4 +173,31 @@ if(WIN32 AND SDL3_FOUND)
     target_link_options(wl4-launcher PRIVATE -municode)
     target_link_libraries(wl4-launcher PRIVATE wl4_settings wl4_crt comdlg32 advapi32 gdi32 dwmapi)
     add_dependencies(wl4-launcher wl4)
+endif()
+
+if(APPLE)
+    target_compile_options(wl4 PRIVATE -fno-delete-null-pointer-checks)
+    # Replace platform sources with build-only derivatives and Darwin implementations.
+    get_target_property(_wl4_sources wl4 SOURCES)
+    foreach(_name bios_test rom game_thread main gba_memory gba_io ppu frame bios audio save gba_functions)
+        list(REMOVE_ITEM _wl4_sources port/src/${_name}.c)
+        list(APPEND _wl4_sources ${WL4_DARWIN_GENERATED}/${_name}.c)
+    endforeach()
+    list(REMOVE_ITEM _wl4_sources port/platform/sdl/sdl_frontend.c port/src/os_win32.c port/src/save_test.c port/src/io_test.c port/src/x86_access.c port/generated/gba_symbols.s)
+    list(APPEND _wl4_sources port/macos/audio_output.c ${WL4_DARWIN_GENERATED}/sdl_frontend.c port/macos/pad_route.c port/macos/os_darwin.c port/macos/os_file_posix.c port/macos/memory_libc.c port/macos/arm64_access.c port/macos/save_test_posix.c port/macos/io_test.c ${WL4_DARWIN_GENERATED}/gba_symbols.s)
+    set_property(TARGET wl4 PROPERTY SOURCES ${_wl4_sources})
+    # Game-native functions use the same pointer-access overlay.
+    set_property(TARGET wl4_game_native PROPERTY SOURCES ${WL4_DARWIN_GENERATED}/m4a_native.c port/src/rumble_snapshot.c port/src/tile_wrap_test.c port/macos/trace.c)
+    if(SDL3_FOUND)
+        add_executable(wl4-audio-output-test port/macos/audio_output_test.c port/macos/audio_output.c port/macos/memory_libc.c)
+        target_include_directories(wl4-audio-output-test PRIVATE port/macos)
+        target_link_libraries(wl4-audio-output-test PRIVATE SDL3::SDL3)
+        add_executable(wl4-controller-recovery-test port/macos/controller_recovery_test.c)
+        target_link_libraries(wl4-controller-recovery-test PRIVATE wl4_settings)
+        target_link_libraries(wl4_game_native PRIVATE SDL3::SDL3)
+        set_property(TARGET wl4_settings PROPERTY SOURCES port/macos/settings.c port/macos/controls.c)
+        target_sources(wl4_settings PRIVATE port/macos/os_file_posix.c port/macos/memory_libc.c)
+        target_sources(wl4_crt PRIVATE port/macos/memory_libc.c)
+    endif()
+    target_sources(wl4-rumble-event-test PRIVATE port/macos/memory_libc.c)
 endif()

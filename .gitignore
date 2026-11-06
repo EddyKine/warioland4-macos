@@ -1,6 +1,14 @@
 # IDE files
 .vscode
 
+# macOS metadata and local player state
+.DS_Store
+._*
+*.sav
+*.srm
+settings.cfg
+.work/
+
 # Prerequisites
 *.d
 

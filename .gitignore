@@ -3,7 +3,6 @@
 
 # macOS metadata and local player state
 .DS_Store
-._*
 *.sav
 *.srm
 settings.cfg
@@ -103,3 +102,6 @@ port/generated/failed_probe.c
 !port/tools/
 !port/**/*.py
 !CMakeLists.txt
+
+# Keep metadata excluded after script exceptions above.
+._*

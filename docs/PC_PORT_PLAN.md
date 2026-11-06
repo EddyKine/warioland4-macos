@@ -179,7 +179,8 @@ Steps 1–3 change shared code under the byte-identical invariant and can merge 
 Public GitHub preparation (2026-11-06): the user requested publication of the
 macOS arm64 port in their own public repository. The empty public destination
 EddyKine/warioland4-macos is created and configured as myfork; GitHub CLI
-authorization is pending. No push or release has been performed. Base is b71d137.
+authorization is complete for EddyKine. Implementation commit is 3fde448,
+based on b71d137. Publication targets branch port only; no binary release.
 The intended port history contains none of the three prohibited launcher images.
 ROMs, player saves, builds and AppleDouble metadata are excluded from publication.
 The existing arm64 build is up to date; coroutine, BIOS/LZ77, I/O, virtual-controller
@@ -188,8 +189,9 @@ The audio experiment remains disabled; these checks do not establish audible
 quality. Shared src/include/port/generated have no diff. GBA byte identity was
 not rebuilt: the required reference objects and compiler are absent locally;
 the previous imported verification remains v7-46, with v7-47 next.
-Next: authorize GitHub CLI, then push only branch port to myfork. The publication
-commit includes the named macOS sources, documentation and metadata/save ignores.
+Next: push branch port to myfork and verify the remote commit and public README.
+The publication includes the named macOS sources, documentation and metadata/save
+ignores. AppleDouble excludes follow the Python exceptions so metadata stays ignored.
 
 Audio investigation / response rollback (2026-10-27): user confirms graphics and
 Machenike Bluetooth controls now work well; occasional crackles remain. Real log

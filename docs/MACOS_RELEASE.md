@@ -1,6 +1,6 @@
 # macOS v0.1.0-beta
 
-Descarga: https://github.com/EddyKine/warioland4-macos/releases/tag/v0.1.0-beta
+Descarga: https://github.com/EddyKine/warioland4-macos/releases/tag/macos-v0.1.0-beta
 
 ZIP con **Wario Land 4.app**, SDL incluido y LEEME.txt. Requiere Apple Silicon y macOS 27.0 o posterior. Pruebas actuales en macOS 27.2; el motor tenía validación previa en macOS 27.0.1. No hay pruebas en un segundo Mac físico ni en Intel.
 

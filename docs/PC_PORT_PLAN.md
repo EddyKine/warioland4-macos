@@ -182,9 +182,11 @@ Support storage, plus explicit-allowlist ZIP packaging and relocation verificati
 Existing game runtime and private app/save files are preserved. 600-frame and
 remembered-path relaunch checks pass; bundled SDL and ad hoc signatures verified.
 See docs/MACOS_RELEASE.md for artifact hash, scope and Gatekeeper limitations.
-Latest prior commit a0318af; this publication records launcher/package sources.
+Packaging commit 05d80ff records launcher/package sources. The upstream
+v0.1.0-beta tag already existed; macOS uses macos-v0.1.0-beta so its release
+references the macOS source.
 No shared GBA source changes or new GBA rebuild; imported v7-46 remains the
-previous handover reference (v7-47 next). Next: tag v0.1.0-beta and publish to
+previous handover reference (v7-47 next). Next: tag macos-v0.1.0-beta and publish to
 myfork only. Full-game and second-Mac acceptance remain incomplete.
 
 Public GitHub preparation (2026-11-06): the user requested publication of the

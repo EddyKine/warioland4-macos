@@ -7,7 +7,7 @@ This repository adds an experimental native macOS arm64 backend to
 based on its `port` branch at `b71d137`. Original credits and license notices
 are preserved. The Windows and Linux release links below belong to that upstream
 project. Download the macOS Apple Silicon app from
-[our v0.1.0-beta release](https://github.com/EddyKine/warioland4-macos/releases/tag/v0.1.0-beta).
+[our v0.1.0-beta release](https://github.com/EddyKine/warioland4-macos/releases/tag/macos-v0.1.0-beta).
 The public app includes SDL and asks you to select your own compatible ROM.
 See [release instructions and checks](docs/MACOS_RELEASE.md).
 

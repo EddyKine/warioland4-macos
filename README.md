@@ -6,7 +6,10 @@ This repository adds an experimental native macOS arm64 backend to
 [BioRhythmicStudios/warioland4](https://github.com/BioRhythmicStudios/warioland4),
 based on its `port` branch at `b71d137`. Original credits and license notices
 are preserved. The Windows and Linux release links below belong to that upstream
-project; this repository does not currently provide a macOS binary release.
+project. Download the macOS Apple Silicon app from
+[our v0.1.0-beta release](https://github.com/EddyKine/warioland4-macos/releases/tag/v0.1.0-beta).
+The public app includes SDL and asks you to select your own compatible ROM.
+See [release instructions and checks](docs/MACOS_RELEASE.md).
 
 Install the Xcode command line tools and Homebrew packages `cmake`, `ninja` and
 `sdl3`, then run `sh port/macos/build.sh`. Place your own compatible US ROM at

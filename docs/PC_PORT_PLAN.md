@@ -176,6 +176,17 @@ Steps 1–3 change shared code under the byte-identical invariant and can merge 
 
 ### Where we are (2026-10-18)
 
+macOS public beta packaging (2026-11-06): user authorized binary releases.
+The release adds a Cocoa ROM picker with hash validation and separate Application
+Support storage, plus explicit-allowlist ZIP packaging and relocation verification.
+Existing game runtime and private app/save files are preserved. 600-frame and
+remembered-path relaunch checks pass; bundled SDL and ad hoc signatures verified.
+See docs/MACOS_RELEASE.md for artifact hash, scope and Gatekeeper limitations.
+Latest prior commit a0318af; this publication records launcher/package sources.
+No shared GBA source changes or new GBA rebuild; imported v7-46 remains the
+previous handover reference (v7-47 next). Next: tag v0.1.0-beta and publish to
+myfork only. Full-game and second-Mac acceptance remain incomplete.
+
 Public GitHub preparation (2026-11-06): the user requested publication of the
 macOS arm64 port in their own public repository. The empty public destination
 EddyKine/warioland4-macos is created and configured as myfork; GitHub CLI
